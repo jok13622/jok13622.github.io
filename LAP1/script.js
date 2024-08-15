@@ -2,9 +2,9 @@
 document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault(); // ป้องกันการส่งฟอร์ม
 
-    // เก็บข้อมูลล็อกอินที่ถูกต้อง
-    const validUsername = 'user';
-    const validPassword = 'password';
+    // ข้อมูลล็อกอินที่ถูกต้อง
+    const validUsername = 'admin';
+    const validPassword = 'password123';
 
     // ดึงข้อมูลจากฟอร์ม
     const username = document.getElementById('username').value;
