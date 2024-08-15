@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แสดงกราฟใน Modal</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- amCharts 4 -->
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <!-- Custom CSS for hiding columns -->
+    <style>
+        /* ซ่อนคอลัมน์ 11 ถึง 22 */
+        .hidden-cols {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">อัปโหลดไฟล์ Excel เพื่อแสดงข้อมูล</h2>
+        <input type="file" id="inputExcel" class="form-control mb-3" accept=".xlsx, .xls">
+
+        <table class="table table-bordered" id="excelTable">
+            <thead>
+                <tr>
+                    <th>custcode</th>
+                    <th>type</th>
+                    <th>addr</th>
+                    <th>meterno</th>
+                    <th>ยี่ห้อมาตรฯ</th>
+                    <th>ขนาดมาตรฯ</th>
+                    <th>วันที่เริ่มเป็นผู้ใช้น้ำ</th>
+                    <th>วันที่เริ่มใช้มาตรฯ</th>
+                    <th>หน่วยน้ำใช้เฉลี่ย</th>
+                    <th>หน่วยน้ำใช้ปัจจุบัน</th>
+                    <th class="hidden-cols">นยล.1</th>
+                    <th class="hidden-cols">นยล.2</th>
+                    <th class="hidden-cols">นยล.3</th>
+                    <th class="hidden-cols">นยล.4</th>
+                    <th class="hidden-cols">นยล.5</th>
+                    <th class="hidden-cols">นยล.6</th>
+                    <th class="hidden-cols">นยล.7</th>
+                    <th class="hidden-cols">นยล.8</th>
+                    <th class="hidden-cols">นยล.9</th>
+                    <th class="hidden-cols">นยล.10</th>
+                    <th class="hidden-cols">นยล.11</th>
+                    <th class="hidden-cols">นยล.12</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- ข้อมูลจะถูกเพิ่มที่นี่ด้วย JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">รายละเอียดผู้ใช้น้ำ - กราฟแสดงข้อมูล</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="chartdiv" style="width: 100%; height: 500px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+    <!-- xlsx.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        document.getElementById('inputExcel').addEventListener('change', function (event) {
+            const file = event.target.files[0]; // รับไฟล์ที่ถูกเลือกโดยผู้ใช้
+            if (!file) return; // ถ้าไม่มีไฟล์ถูกเลือก ให้หยุดทำงาน
+
+            const reader = new FileReader(); // สร้าง object FileReader เพื่ออ่านไฟล์
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result); // แปลงข้อมูลไฟล์เป็น Uint8Array
+                const workbook = XLSX.read(data, { type: 'array' }); // อ่านไฟล์ Excel เป็น workbook
+
+                // อ่าน sheet แรกของ workbook
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }); // แปลงข้อมูลใน sheet เป็น array ของแถว (rows)
+
+                // ลบข้อมูลเก่าในตาราง HTML
+                const tbody = document.querySelector('#excelTable tbody');
+                tbody.innerHTML = '';
+
+                // วนลูปแต่ละแถวของข้อมูล
+                rows.forEach((row, index) => {
+                    if (index === 0) return; // ข้ามแถวแรก (header)
+
+                    const tr = document.createElement('tr'); // สร้างแถวใหม่
+                    row.forEach((cell, i) => {
+                        const td = document.createElement('td'); // สร้างเซลล์ใหม่ในแถว
+                        td.textContent = cell || ''; // ใส่ค่าของเซลล์หรือว่างเปล่าถ้าไม่มีค่า
+                        if (i >= 10 && i <= 21) { // ซ่อนคอลัมน์ที่ 11 ถึง 22
+                            td.classList.add('hidden-cols');
+                        }
+                        tr.appendChild(td); // เพิ่มเซลล์ในแถว
+                    });
+
+                    // สร้างคอลัมน์สำหรับปุ่ม "รายละเอียด"
+                    const actionTd = document.createElement('td');
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-primary';
+                    button.textContent = 'รายละเอียด';
+                    button.setAttribute('data-bs-toggle', 'modal'); // ตั้งค่าให้ปุ่มเปิด modal
+                    button.setAttribute('data-bs-target', '#detailModal');
+                    button.setAttribute('data-id', row[0]); // ใช้ custcode เป็น ID
+                    button.addEventListener('click', function () {
+                        // ดึงข้อมูลจากคอลัมน์ที่ 11 ถึง 22 มาใส่ในกราฟ
+                        const chartData = [
+                            { category: 'นยล.1', value: row[10] || 0 },
+                            { category: 'นยล.2', value: row[11] || 0 },
+                            { category: 'นยล.3', value: row[12] || 0 },
+                            { category: 'นยล.4', value: row[13] || 0 },
+                            { category: 'นยล.5', value: row[14] || 0 },
+                            { category: 'นยล.6', value: row[15] || 0 },
+                            { category: 'นยล.7', value: row[16] || 0 },
+                            { category: 'นยล.8', value: row[17] || 0 },
+                            { category: 'นยล.9', value: row[18] || 0 },
+                            { category: 'นยล.10', value: row[19] || 0 },
+                            { category: 'นยล.11', value: row[20] || 0 },
+                            { category: 'นยล.12', value: row[21] || 0 }
+                        ];
+
+                        createChart(chartData); // สร้างกราฟโดยใช้ข้อมูล chartData
+                    });
+                    actionTd.appendChild(button); // เพิ่มปุ่มลงในแถว
+                    tr.appendChild(actionTd); // เพิ่มคอลัมน์ที่มีปุ่มลงในแถว
+
+                    tbody.appendChild(tr); // เพิ่มแถวลงในตาราง
+                });
+            };
+
+            reader.readAsArrayBuffer(file); // อ่านไฟล์เป็น array buffer
+        });
+
+        function createChart(data) {
+            am4core.ready(function () {
+                am4core.useTheme(am4themes_animated); // ใช้ธีม animated ของ amCharts
+
+                let chart = am4core.create("chartdiv", am4charts.XYChart); // สร้าง instance ของกราฟ XYChart
+
+                chart.data = data; // กำหนดข้อมูลให้กับกราฟ
+
+                let categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis()); // สร้าง Category Axis
+                categoryAxis.dataFields.category = "category"; // กำหนดฟิลด์ที่ใช้แสดงในแกน X
+                categoryAxis.renderer.grid.template.location = 0;
+                categoryAxis.renderer.minGridDistance = 30; // กำหนดระยะห่างขั้นต่ำระหว่างเส้นกริด
+
+                let valueAxis = chart.yAxes.push(new am4charts.ValueAxis()); // สร้าง Value Axis
+
+                let series = chart.series.push(new am4charts.ColumnSeries()); // สร้าง series ของกราฟแท่ง
+                series.dataFields.valueY = "value"; // กำหนดฟิลด์ที่ใช้แสดงในแกน Y
+                series.dataFields.categoryX = "category"; // กำหนดฟิลด์ที่ใช้แสดงในแกน X
+                series.name = "Value";
+                series.columns.template.tooltipText = "{categoryX}: [bold]{valueY}[/]"; // ตั้งค่า tooltip เมื่อ hover
+                series.columns.template.fillOpacity = 0.8; // ตั้งค่าความทึบของแท่ง
+
+                let columnTemplate = series.columns.template;
+                columnTemplate.strokeWidth = 2; // ตั้งค่าความหนาของเส้นขอบของแท่ง
+                columnTemplate.strokeOpacity = 1; // ตั้งค่าความทึบของเส้นขอบ
+
+                document.getElementById('detailModal').addEventListener('hidden.bs.modal', function () {
+                    chart.dispose(); // ทำลายกราฟเมื่อ modal ถูกปิด
+                });
+            });
+        }
+
+    </script>
+</body>
+
+</html>
